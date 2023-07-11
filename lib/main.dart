@@ -1,164 +1,77 @@
-// original code is here, this is upadated version for the new Flutter
-// https://gist.github.com/guptahitesh121/ca7fa34d73b8b024823c85dd0c7f687d
-
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
 
-void main() => runApp(const MyApp());
+void main() {
+  runApp(const MyApp());
+}
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+double hola = 0;
+bool dtouch = false;
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Color _boxColor = Colors.blue;
+
+  void changeColor() {
+    Random random = Random();
+
+    setState(() {
+      if (dtouch) {
+        _boxColor = Colors.red;
+      } else {
+        _boxColor = Colors.blue;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Swipe Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const SwipeDemo(),
-    );
-  }
-}
-
-class SwipeDemo extends StatefulWidget {
-  const SwipeDemo({Key? key}) : super(key: key);
-
-  @override
-  SwipeDemoState createState() => SwipeDemoState();
-}
-
-class SwipeDemoState extends State<SwipeDemo> {
-  Offset offset = Offset.zero;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: TwoFingerPointerWidget(
-        onUpdate: (details) {
-          setState(() {
-            offset += details.delta;
-          });
-        },
-        child: Container(
-          alignment: Alignment.center,
-          color: Colors.white,
-          child: Transform.translate(
-            offset: offset,
+      title: 'RawGestureDetector Example',
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('RawGestureDetector Example'),
+        ),
+        body: Center(
+          child: Listener(
+            onPointerDown: (opm) {
+              hola = hola + 0.5;
+              print(hola);
+              if (hola >= 1) {
+                dtouch = true;
+                hola = 0;
+                print(dtouch);
+                changeColor();
+                dtouch = false;
+              }
+            },
+            onPointerUp: (opc) {
+              hola = hola - 0.5;
+              changeColor();
+              if (hola < 0) {
+                hola = 0;
+              }
+            },
             child: Container(
-              width: 100,
-              height: 100,
-              color: Colors.red,
+              width: 300,
+              height: 300,
+              color: _boxColor,
+              child: const Center(
+                child: Text(
+                  'hola',
+                  style: TextStyle(fontSize: 50),
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
-  }
-}
-
-class TwoFingerPointerWidget extends StatelessWidget {
-  final Widget child;
-  final OnUpdate onUpdate;
-
-  const TwoFingerPointerWidget({
-    Key? key,
-    required this.child,
-    required this.onUpdate,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return RawGestureDetector(
-      gestures: <Type, GestureRecognizerFactory>{
-        CustomVerticalMultiDragGestureRecognizer:
-            GestureRecognizerFactoryWithHandlers<
-                CustomVerticalMultiDragGestureRecognizer>(
-          () => CustomVerticalMultiDragGestureRecognizer(debugOwner: null),
-          (CustomVerticalMultiDragGestureRecognizer instance) {
-            instance.onStart = (Offset position) {
-              return CustomDrag(
-                events: instance.events,
-                onUpdate: onUpdate,
-              );
-            };
-          },
-        ),
-      },
-      child: child,
-    );
-  }
-}
-
-typedef OnUpdate = Function(DragUpdateDetails details);
-
-class CustomDrag extends Drag {
-  final List<PointerDownEvent> events;
-
-  final OnUpdate onUpdate;
-
-  CustomDrag({required this.events, required this.onUpdate});
-
-  @override
-  void update(DragUpdateDetails details) {
-    super.update(details);
-    final delta = details.delta;
-    if (delta.dy.abs() > 0 && events.length == 2) {
-      onUpdate.call(DragUpdateDetails(
-        sourceTimeStamp: details.sourceTimeStamp,
-        delta: Offset(0, delta.dy),
-        primaryDelta: details.primaryDelta,
-        globalPosition: details.globalPosition,
-        localPosition: details.localPosition,
-      ));
-    }
-  }
-}
-
-class CustomVerticalMultiDragGestureRecognizer
-    extends MultiDragGestureRecognizer {
-  final List<PointerDownEvent> events = [];
-
-  CustomVerticalMultiDragGestureRecognizer({required Object? debugOwner})
-      : super(debugOwner: debugOwner);
-
-  @override
-  createNewPointerState(PointerDownEvent event) {
-    events.add(event);
-    return _CustomVerticalPointerState(event.position, onDisposeState: () {
-      events.remove(event);
-    });
-  }
-
-  @override
-  String get debugDescription => 'custom vertical multi drag';
-}
-
-typedef OnDisposeState = Function();
-
-class _CustomVerticalPointerState extends MultiDragPointerState {
-  final OnDisposeState onDisposeState;
-
-  _CustomVerticalPointerState(Offset initialPosition,
-      {required this.onDisposeState})
-      : super(initialPosition, PointerDeviceKind.touch, null);
-
-  @override
-  void checkForResolutionAfterMove() {
-    if (pendingDelta!.dy.abs() > kTouchSlop) {
-      resolve(GestureDisposition.accepted);
-    }
-  }
-
-  @override
-  void accepted(GestureMultiDragStartCallback starter) {
-    starter(initialPosition);
-  }
-
-  @override
-  void dispose() {
-    onDisposeState.call();
-    super.dispose();
   }
 }
