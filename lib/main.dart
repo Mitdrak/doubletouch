@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 void main() {
   runApp(const MyApp());
+}
+
+void connectToSocketIO() {
+  IO.Socket socket = IO.io('http://localhost:3000', <String, dynamic>{
+    'transports': ['websocket'],
+    'autoConnect': false,
+  });
+
+  socket.onConnect((_) {
+    print('Connected to Socket.IO server');
+    socket.emit('join', 'Flutter client');
+  });
+
+  socket.on('message', (data) {
+    print('Received message: $data');
+  });
+
+  socket.onDisconnect((_) {
+    print('Disconnected from Socket.IO server');
+  });
+
+  socket.connect();
 }
 
 double hola = 0;
@@ -12,11 +35,28 @@ class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  _MyAppState createState() => _MyAppState();
+  State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
   Color _boxColor = Colors.blue;
+  void iniState() {
+    super.initState();
+  }
+  // IO.Socket? socket;
+  //   connect();
+
+  // void connect() {
+  //   socket = IO.io("http://localhost:3000", <String, dynamic>{
+  //     "transports": ["websocket"],
+  //     "autoConnect": false,
+  //   });
+  //   socket!.connect();
+  //   socket!.onConnect((_) {
+  //     print('connected into frontend');
+  //     //socket!.emit('msg', 'test');
+  //   });
+  // }
 
   void changeColor() {
     Random random = Random();
@@ -49,6 +89,7 @@ class _MyAppState extends State<MyApp> {
                 print(dtouch);
                 changeColor();
                 dtouch = false;
+                connectToSocketIO();
               }
             },
             onPointerUp: (opc) {
